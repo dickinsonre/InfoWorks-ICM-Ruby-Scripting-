@@ -1,0 +1,84 @@
+# InfoWorks ICM WSApplication.Graph(options) - Improved Reference
+# Demonstrates time-series graph generation with reusable helper methods
+
+require 'date'
+
+#=============================================================================
+# HELPER METHODS
+#=============================================================================
+
+# Generate evenly-spaced DateTime array
+# @param start_str [String] Start time in "DD/MM/YYYY HH:MM" format
+# @param interval_minutes [Integer] Minutes between each point
+# @param count [Integer] Number of data points
+# @return [Array<DateTime>]
+def generate_time_series(start_str, interval_minutes, count)
+  start_time = DateTime.strptime(start_str, "%d/%m/%Y %H:%M")
+  Array.new(count) { |i| start_time + Rational(i * interval_minutes, 1440) }
+end
+
+# Create a trace hash for WSApplication.graph
+# @param title [String] Trace legend title
+# @param x_data [Array] X-axis values
+# @param y_data [Array] Y-axis values
+# @param options [Hash] Optional: color, line_type, marker
+# @return [Hash]
+def create_trace(title, x_data, y_data, options = {})
+  color = options[:color] || { r: 0, g: 0, b: 139 }  # Default: dark blue
+  {
+    "Title"       => title,
+    "XArray"      => x_data,
+    "YArray"      => y_data,
+    "LineType"    => options[:line_type] || "Solid",
+    "Marker"      => options[:marker] || "None",
+    "TraceColour" => WSApplication.colour(color[:r], color[:g], color[:b])
+  }
+end
+
+# Display a time-series graph
+# @param window_title [String] Window title bar text
+# @param graph_title [String] Graph title (centered above plot)
+# @param x_label [String] X-axis label
+# @param y_label [String] Y-axis label
+# @param traces [Array<Hash>] Array of trace hashes from create_trace()
+def show_graph(window_title, graph_title, x_label, y_label, traces)
+  WSApplication.graph({
+    "WindowTitle" => window_title,
+    "GraphTitle"  => graph_title,
+    "XAxisLabel"  => x_label,
+    "YAxisLabel"  => y_label,
+    "IsTime"      => true,
+    "Traces"      => traces
+  })
+end
+
+#=============================================================================
+# MAIN EXECUTION
+#=============================================================================
+
+# Configuration
+START_TIME       = "21/09/2025 06:48"
+INTERVAL_MINUTES = 2
+DATA_POINTS      = 10
+
+# Generate time series (no manual entry = no gaps/typos)
+x_times = generate_time_series(START_TIME, INTERVAL_MINUTES, DATA_POINTS)
+
+# Flow data (l/s) - synthetic diurnal variation
+y_flows = [26.9, 26.7, 26.9, 26.5, 27.0, 25.6, 25.3, 25.6, 26.1, 26.3]
+
+# Build traces (easily add more series)
+traces = [
+  create_trace("DS Flow", x_times, y_flows, color: { r: 0, g: 0, b: 139 }),
+  # Add more traces here if needed:
+  # create_trace("US Flow", x_times, y_upstream, color: { r: 139, g: 0, b: 0 })
+]
+
+# Display graph
+show_graph(
+  "Flow vs Time",
+  "Predicted DS Flow (l/s)",
+  "Time",
+  "Flow (l/s)",
+  traces
+)
